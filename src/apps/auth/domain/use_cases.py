@@ -27,5 +27,4 @@ class ValidateTokenUseCase:
         self.repository = repository
 
     def execute(self, token: str) -> bool:
-        # Lógica para validar el token
         return self.repository.validate_token(token)

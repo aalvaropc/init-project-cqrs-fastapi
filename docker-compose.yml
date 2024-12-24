@@ -137,6 +137,25 @@ services:
     networks:
       - pg_net
 
+  # tests:
+  #   container_name: tests
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.tests
+  #   depends_on:
+  #     - pg_primary
+  #     - pg_replica
+  #     - rabbitmq
+  #   environment:
+  #     - WRITER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_primary:5432/mydatabase
+  #     - READER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_replica:5432/mydatabase
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USER=guest
+  #     - RABBITMQ_PASSWORD=guest
+  #   networks:
+  #     - pg_net
+
 networks:
   pg_net:
 

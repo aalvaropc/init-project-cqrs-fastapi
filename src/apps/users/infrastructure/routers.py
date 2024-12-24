@@ -56,41 +56,42 @@ def get_user_details(user_id: int, db: Session = Depends(get_db_reader)):
 @router.put("/me", status_code=202, summary="Update authenticated user's profile")
 def update_authenticated_user(
     request: UpdateUserRequest,
-    current_user_id: int = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # Cambiado de `int` a `dict`
 ):
     """
     Updates the profile of the currently authenticated user.
 
     Args:
         request (UpdateUserRequest): The updated user data (name, email).
-        current_user_id (int): The ID of the authenticated user.
+        current_user (dict): The authenticated user's data.
 
     Returns:
-        dict: A confirmation message indicating the update command was published.
+        dict: A confirmation message.
     """
+    user_id = current_user.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid user data.")
+
     if not request.name and not request.email:
         raise HTTPException(status_code=400, detail="No update fields provided.")
 
     publish_update_user_command(
-        user_id=current_user_id,
+        user_id=user_id,
         name=request.name,
-        email=request.email
+        email=request.email,
     )
     return {"detail": "User profile update command published."}
 
+# @router.delete("/me", status_code=202, summary="Delete authenticated user")
+# def delete_authenticated_user(current_user_id: int = Depends(get_current_user)):
+#     """
+#     Deletes the authenticated user's account by publishing a command to RabbitMQ.
 
-@router.delete("/me", status_code=202, summary="Delete authenticated user's account")
-def delete_authenticated_user(
-    current_user_id: int = Depends(get_current_user),
-):
-    """
-    Deletes the account of the currently authenticated user.
+#     Args:
+#         current_user_id (int): The ID of the authenticated user.
 
-    Args:
-        current_user_id (int): The ID of the authenticated user.
-
-    Returns:
-        dict: A confirmation message indicating the delete command was published.
-    """
-    publish_delete_user_command(user_id=current_user_id)
-    return {"detail": "User delete command published."}
+#     Returns:
+#         dict: Confirmation of the delete command.
+#     """
+#     publish_delete_user_command(user_id=current_user_id)
+#     return {"detail": "User delete command published."}

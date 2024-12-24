@@ -20,12 +20,7 @@ This project demonstrates a complete backend system built with the following tec
 
 ### Using Docker
 
-Clone the repository:
 
-```bash
-git clone <REPOSITORY_URL>
-cd project
-```
 
 Build and run the application:
 
@@ -87,20 +82,6 @@ Domain Layer contains the core business logic and use cases. Application Layer h
 
 - Commands: Operations that modify data (create_user, update_user, delete_user)
 - Queries: Operations that retrieve data (get_user_by_id)
-
-## Testing
-
-Run all tests:
-
-```bash
-pytest
-```
-
-Generate a coverage report:
-
-```bash
-pytest --cov=src tests/
-```
 
 ## Environment Variables
 

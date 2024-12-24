@@ -1,4 +1,6 @@
 import pika
+
+from threading import Lock
 from src.core.config import settings
 
 
