@@ -1,0 +1,22 @@
+FROM python:3.9-slim
+
+RUN apt-get update && apt-get install -y \
+    netcat-openbsd \
+    postgresql-client \
+    && apt-get clean
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+COPY wait-for-rabbit.sh /usr/src/app/
+
+RUN chmod +x /usr/src/app/wait-for-rabbit.sh
+
+ENV PYTHONPATH=/usr/src/app
+
+ENTRYPOINT ["./wait-for-rabbit.sh"]
+
+CMD ["python", "-u"]

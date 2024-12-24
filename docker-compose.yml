@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  #######################################################################
+  # 1) Base de datos primaria (PostgreSQL)
+  #######################################################################
+  pg_primary:
+    container_name: pg_primary
+    build:
+      context: ./primary
+    environment:
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PG_MODE=primary
+      - PG_REP_USER=replicator
+      - PG_REP_PASSWORD=replicator_pwd
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256 --auth-local=scram-sha-256
+    ports:
+      - "5432:5432"
+    volumes:
+      - primary_data:/var/lib/postgresql/data
+    networks:
+      - pg_net
+
+  #######################################################################
+  # 2) Base de datos réplica (PostgreSQL)
+  #######################################################################
+  pg_replica:
+    container_name: pg_replica
+    build:
+      context: ./replica
+    environment:
+      - POSTGRES_DB=mydatabase
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PG_MODE=replica
+      - PG_REP_USER=replicator
+      - PG_REP_PASSWORD=replicator_pwd
+      - PG_PRIMARY_HOST=pg_primary
+      - PG_PRIMARY_PORT=5432
+    ports:
+      - "5433:5432"
+    volumes:
+      - replica_data:/var/lib/postgresql/data
+    depends_on:
+      - pg_primary
+    networks:
+      - pg_net
+
+  #######################################################################
+  # 3) RabbitMQ
+  #######################################################################
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq_server
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # Management UI
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pg_net
+
+  #######################################################################
+  # 4) Aplicación FastAPI
+  #######################################################################
+  app:
+    container_name: fastapi_app
+    build:
+      context: .
+    depends_on:
+      - pg_primary
+      - pg_replica
+      - rabbitmq
+    ports:
+      - "8000:8000"
+    environment:
+      - WRITER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_primary:5432/mydatabase
+      - READER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_replica:5432/mydatabase
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - JWT_SECRET=super_secret_key
+      - JWT_EXPIRE_MINUTES=60
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydatabase
+    networks:
+      - pg_net
+
+  #######################################################################
+  # Consumidor de usuarios
+  #######################################################################
+  user_consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    command: ["python", "-u", "src/apps/users/application/consumers/user_consumer.py"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - WRITER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_primary:5432/mydatabase
+    depends_on:
+      - rabbitmq
+      - pg_primary
+    networks:
+      - pg_net
+
+  #######################################################################
+  # Consumidor de autenticación
+  #######################################################################
+  auth_consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    command: ["python", "-u", "src/apps/auth/application/consumers/auth_consumer.py"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - WRITER_DATABASE_URL=postgresql+psycopg2://postgres:postgres@pg_primary:5432/mydatabase
+    depends_on:
+      - rabbitmq
+      - pg_primary
+    networks:
+      - pg_net
+
+networks:
+  pg_net:
+
+volumes:
+  primary_data:
+  replica_data:
