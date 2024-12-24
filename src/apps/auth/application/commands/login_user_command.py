@@ -2,11 +2,20 @@ import json
 import pika
 from src.core.messaging import get_rabbitmq_connection
 
+
 def publish_login_user_command(email: str, password: str):
     """
-    Publica un comando asíncrono para 'login_user'.
-    Si deseas manejar login via RabbitMQ (CQRS),
-    en lugar de hacerlo de forma sincrónica.
+    Publishes an asynchronous command for 'login_user'.
+    
+    This function is used to handle the login process via RabbitMQ (CQRS),
+    instead of performing the operation synchronously.
+    
+    Args:
+        email (str): The email address of the user attempting to log in.
+        password (str): The password of the user attempting to log in.
+
+    Returns:
+        None
     """
     connection = get_rabbitmq_connection()
     channel = connection.channel()

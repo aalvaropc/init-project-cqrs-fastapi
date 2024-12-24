@@ -10,3 +10,6 @@ pytest-cov==4.0.0
 bcrypt==4.0.1
 pyjwt==2.8.0
 alembic==1.10.2
+tenacity==9.0.0
+passlib==1.7.4
+email-validator>=1.1.1

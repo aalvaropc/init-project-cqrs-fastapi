@@ -2,7 +2,16 @@ import json
 import pika
 from src.core.messaging import get_rabbitmq_connection
 
-def publish_update_user_command(user_id: int, name: str, email: str):
+
+def publish_update_user_command(user_id: int, name: str = None, email: str = None):
+    """
+    Publishes a command to RabbitMQ to update a user's profile.
+
+    Args:
+        user_id (int): The ID of the user to update.
+        name (str): The new name for the user (optional).
+        email (str): The new email for the user (optional).
+    """
     connection = get_rabbitmq_connection()
     channel = connection.channel()
     channel.queue_declare(queue='users_commands', durable=True)

@@ -21,3 +21,15 @@ class AuthRepository(IAuthRepository):
         if hashed.decode('utf-8') == user_model.password_hash:
             return user_model.id
         return None
+    
+    def get_user_by_email(self, email: str):
+        """
+        Recupera un usuario por su correo electrónico.
+        """
+        return self.db.query(UserModel).filter(UserModel.email == email).first()
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        """
+        Verifica si la contraseña en texto plano coincide con el hash.
+        """
+        from src.core.hashing import verify_password
+        return verify_password(plain_password, hashed_password)
